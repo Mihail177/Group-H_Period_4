@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DashBoard</title>
+    <link rel="stylesheet" href="CSS/DashBoard.css">
+</head>
+<body>
+    <main>
+        <div class="menu_bar">
+            <p>Explore</p>
+            <hr>
+                <nav>
+                    <a href="#" class="database_btn"><img src="img/database.png" alt="dtb_img">Database</a>
+                    <a href="#" class="addcard_btn"><img src="img/credit-card.png" alt="credit-card">Add Card</a>
+                </nav>
+        </div>
+        <div class="content_container">
+            <div class="table_container">
+                <nav>
+                    <a href="#" class="browse">Browse</a>
+                    <a href="#" class="import">Import</a>
+                </nav>
+                <div class="table">
+                    <table>
+                        <tr>
+                            <th>UserID</th>
+                            <th>Name</th>
+                            <th>Department/Class</th>
+                            <th>Face Encodings</th>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="info">
+            <div class="user">
+                <img src="img/userpic.png" alt="user_pic">
+                <p>Username</p>
+            </div>
+            <div class="content">
+                <div class="button">
+                    <p>Recently enter</p>
+                    <button id="see-all-btn" class="see-all-btn">See All</button>
+                </div>
+                <div class="enter">
+                    <img src="img/UserProfil.png" alt="enter_ava">
+                    <div class="enter_info">
+                        <p>Username</p>
+                        <p class="time">5 minutes ago</p>
+                    </div>
+                </div>                
+                <div class="more-content hidden">
+                    <div class="enter">
+                        <img src="img/UserProfil.png" alt="enter_ava">
+                        <div class="enter_info">
+                            <p>Username</p>
+                            <p class="time">5 minutes ago</p>
+                        </div>
+                    </div>
+                    <div class="enter">
+                        <img src="img/UserProfil.png" alt="enter_ava">
+                        <div class="enter_info">
+                            <p>Username</p>
+                            <p class="time">5 minutes ago</p>
+                        </div>
+                    </div>
+                </div>
+            </div>     
+        </div>
+        <script>
+            document.getElementById("see-all-btn").addEventListener("click", function() {
+                var moreContent = document.querySelector(".more-content");
+                var button = this;
+    
+                if (moreContent.style.display === "none" || moreContent.style.display === "") {
+                    moreContent.style.display = "block";
+                    button.textContent = "See Less";
+                } else {
+                    moreContent.style.display = "none";
+                    button.textContent = "See All";
+                }
+            });
+        </script>
+    </main>
+    <footer>
+        <div class="user_display">
+            <div class="user_info">
+                <img src="img/Profile.png" alt="profile_pic">
+                <p>Username</p>
+            </div>
+            <a href="#">Log out</a>
+        </div>
+        <div class="empty"></div>
+    </footer>
+</body>
+</html>
