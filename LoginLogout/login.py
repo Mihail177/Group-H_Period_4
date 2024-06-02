@@ -1,3 +1,4 @@
+import subprocess
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QGridLayout, \
     QMessageBox, QCheckBox
@@ -6,7 +7,7 @@ from PyQt5.QtCore import Qt, QSettings
 import mysql.connector
 from mysql.connector import Error
 import bcrypt
-
+from afterLogin import AfterLoginWindow
 
 # Custom widget for gradient background
 class GradientWidget(QWidget):
@@ -88,7 +89,8 @@ class LoginWindow(GradientWidget):
 
         # Login button
         login_button = QPushButton("Login")
-        login_button.setStyleSheet("background-color: #7976E8; color: white; border-radius: 15px; font-family: Baloo 2; font-weight: bold; height: 60px")
+        login_button.setStyleSheet(
+            "background-color: #7976E8; color: white; border-radius: 15px; font-family: Baloo 2; font-weight: bold; height: 60px")
         login_button.clicked.connect(self.login)
         form_layout.addWidget(login_button)
 
@@ -132,7 +134,7 @@ class LoginWindow(GradientWidget):
                 host='localhost',
                 database='example',
                 user='root',
-                password='qwerty'  
+                password='qwerty'
             )
 
             if connection.is_connected():
@@ -142,7 +144,7 @@ class LoginWindow(GradientWidget):
                 result = cursor.fetchone()
 
                 if result:
-                    userID = result['id']
+                    # userID = result['id']
                     name = result['name']
                     hashedPassword = result['password']
 
@@ -158,6 +160,8 @@ class LoginWindow(GradientWidget):
                         QMessageBox.information(self, "Login", f"Login Successful. Welcome {name}!")
                         self.close()
                         # Redirect to the next window or functionality
+                        self.after_login_window = AfterLoginWindow(self.settings, self)
+                        self.after_login_window.show()
                     else:
                         QMessageBox.critical(self, "Error", "Wrong password")
                 else:
@@ -168,7 +172,6 @@ class LoginWindow(GradientWidget):
             if connection.is_connected():
                 cursor.close()
                 connection.close()
-
 
 
 if __name__ == '__main__':
