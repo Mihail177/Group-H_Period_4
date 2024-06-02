@@ -7,20 +7,22 @@
     <link rel="stylesheet" href="CSS/DashBoard.css">
 </head>
 <body>
+    <header>
+    </header>
     <main>
         <div class="menu_bar">
             <p>Explore</p>
             <hr>
-                <nav>
-                    <a href="#" class="database_btn"><img src="img/database.png" alt="dtb_img">Database</a>
-                    <a href="#" class="addcard_btn"><img src="img/credit-card.png" alt="credit-card">Add Card</a>
-                </nav>
+            <nav>
+                <a href="#" class="database_btn"><img src="img/database.png" alt="dtb_img">Database</a>
+                <a href="#" class="addcard_btn"><img src="img/credit-card.png" alt="credit-card">Add Card</a>
+            </nav>
         </div>
         <div class="content_container">
             <div class="table_container">
                 <nav>
                     <a href="#" class="browse">Browse</a>
-                    <a href="#" class="import">Import</a>
+                    <a href="ImportSQLFIle.html" class="import">Import</a>
                 </nav>
                 <div class="table">
                     <table>
@@ -30,126 +32,20 @@
                             <th>Department/Class</th>
                             <th>Face Encodings</th>
                         </tr>
+                        <!-- Sample rows -->
                         <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td>ST123</td>
+                            <td>THY Phan</td>
+                            <td>IT1</td>
+                            <td>1234abc</td>
                         </tr>
                         <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td>ST124</td>
+                            <td>John Doe</td>
+                            <td>IT2</td>
+                            <td>5678def</td>
                         </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
+                        <!-- Add more rows as needed -->
                     </table>
                 </div>
             </div>
@@ -170,39 +66,25 @@
                         <p>Username</p>
                         <p class="time">5 minutes ago</p>
                     </div>
-                </div>                
+                </div>
                 <div class="more-content hidden">
                     <div class="enter">
                         <img src="img/UserProfil.png" alt="enter_ava">
                         <div class="enter_info">
                             <p>Username</p>
-                            <p class="time">5 minutes ago</p>
+                            <p class="time">10 minutes ago</p>
                         </div>
                     </div>
                     <div class="enter">
                         <img src="img/UserProfil.png" alt="enter_ava">
                         <div class="enter_info">
                             <p>Username</p>
-                            <p class="time">5 minutes ago</p>
+                            <p class="time">15 minutes ago</p>
                         </div>
                     </div>
                 </div>
-            </div>     
+            </div>
         </div>
-        <script>
-            document.getElementById("see-all-btn").addEventListener("click", function() {
-                var moreContent = document.querySelector(".more-content");
-                var button = this;
-    
-                if (moreContent.style.display === "none" || moreContent.style.display === "") {
-                    moreContent.style.display = "block";
-                    button.textContent = "See Less";
-                } else {
-                    moreContent.style.display = "none";
-                    button.textContent = "See All";
-                }
-            });
-        </script>
     </main>
     <footer>
         <div class="user_display">
@@ -212,7 +94,20 @@
             </div>
             <a href="#">Log out</a>
         </div>
-        <div class="empty"></div>
     </footer>
+    <script>
+        document.getElementById("see-all-btn").addEventListener("click", function () {
+            var moreContent = document.querySelector(".more-content");
+            var button = this;
+
+            if (moreContent.style.display === "none" || moreContent.style.display === "") {
+                moreContent.style.display = "block";
+                button.textContent = "See All";
+            } else {
+                moreContent.style.display = "none";
+                button.textContent = "See All";
+            }
+        });
+    </script>
 </body>
 </html>
