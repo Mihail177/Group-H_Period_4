@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QLineEdit, QHBoxLayout, QFormLayout
-from PyQt6.QtGui import QPixmap
+import PyQt6.QtGui
 from PyQt6.QtCore import Qt
 import sys
 import face_recognition

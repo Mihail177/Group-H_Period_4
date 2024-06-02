@@ -11,8 +11,8 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
 
         # Load the custom fonts
-        font1_id = QFontDatabase.addApplicationFont(r"C:\Users\PC\PycharmProjects\pythonProject\DashBoard-Period4\CSS\Baloo2-Bold.ttf")
-        font2_id = QFontDatabase.addApplicationFont(r"C:\Users\PC\PycharmProjects\pythonProject\DashBoard-Period4\CSS\Quicksand-VariableFont_wght.ttf")
+        font1_id = QFontDatabase.addApplicationFont(r"C:\Users\PC\PycharmProjects\pythonProject\Group-H_Period_4\DashBoard-Period4\CSS\Baloo2-Bold.ttf")
+        font2_id = QFontDatabase.addApplicationFont(r"C:\Users\PC\PycharmProjects\pythonProject\Group-H_Period_4\DashBoard-Period4\CSS\Quicksand-VariableFont_wght.ttf")
 
         if font1_id != -1:
             font1_families = QFontDatabase.applicationFontFamilies(font1_id)
@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         self.web_view = QWebEngineView()
 
         # Load the local HTML file
-        self.web_view.setUrl(QUrl.fromLocalFile(r"C:\Users\PC\PycharmProjects\pythonProject\DashBoard-Period4\DashBoard.html"))
+        self.web_view.setUrl(QUrl.fromLocalFile(r"C:\Users\PC\PycharmProjects\pythonProject\Group-H_Period_4\DashBoard-Period4\DashBoard.html"))
 
         # Set the central widget
         self.setCentralWidget(self.web_view)
