@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLay
 from PyQt5.QtGui import QPalette, QBrush, QLinearGradient, QColor, QImage, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from picamera2 import Picamera2
-from libcamera import controls
 
 class FacialRecognitionThread(QThread):
     update_label = pyqtSignal(str)
