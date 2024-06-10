@@ -6,12 +6,16 @@ import pickle
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout
 from PyQt5.QtGui import QPalette, QBrush, QLinearGradient, QColor, QImage, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from picamera2 import Picamera2, Preview
+from picamera2 import Picamera2
 from libcamera import controls
 
 class FacialRecognitionThread(QThread):
     update_label = pyqtSignal(str)
     update_image = pyqtSignal(np.ndarray)
+
+    def __init__(self):
+        super().__init__()
+        self.running = True
 
     def run(self):
         # Paths to the model files
@@ -30,12 +34,12 @@ class FacialRecognitionThread(QThread):
         known_name = user_data['name']
 
         # Open a connection to the Pi Camera
-        picam2 = Picamera2()
-        picam2.configure(picam2.create_preview_configuration(main={"size": (640, 480)}))
-        picam2.start()
+        self.picam2 = Picamera2()
+        self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480)}))
+        self.picam2.start()
 
-        while True:
-            frame = picam2.capture_array()
+        while self.running:
+            frame = self.picam2.capture_array()
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = detector(gray)
@@ -66,7 +70,10 @@ class FacialRecognitionThread(QThread):
             self.update_label.emit(f"Recognition Result: {name}")
 
     def stop(self):
+        self.running = False
         self.picam2.stop()
+        self.quit()
+        self.wait()
 
 class MainWindow(QWidget):
     def __init__(self):
