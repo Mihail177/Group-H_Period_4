@@ -4,9 +4,10 @@ import dlib
 import numpy as np
 import pickle
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout
-from PyQt5.QtGui import QPalette, QBrush, QLinearGradient, QColor
+from PyQt5.QtGui import QPalette, QBrush, QLinearGradient, QColor, QImage, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
-
+from picamera2 import Picamera2, Preview
+from libcamera import controls
 
 class FacialRecognitionThread(QThread):
     update_label = pyqtSignal(str)
@@ -29,12 +30,12 @@ class FacialRecognitionThread(QThread):
         known_name = user_data['name']
 
         # Open a connection to the Pi Camera
-        cap = cv2.VideoCapture(0)
+        picam2 = Picamera2()
+        picam2.configure(picam2.create_preview_configuration(main={"size": (640, 480)}))
+        picam2.start()
 
         while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+            frame = picam2.capture_array()
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = detector(gray)
@@ -64,12 +65,8 @@ class FacialRecognitionThread(QThread):
             self.update_image.emit(frame)
             self.update_label.emit(f"Recognition Result: {name}")
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        cap.release()
-        cv2.destroyAllWindows()
-
+    def stop(self):
+        self.picam2.stop()
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -130,13 +127,17 @@ class MainWindow(QWidget):
         self.message_label.setText(text)
 
     def update_image(self, frame):
-        # Convert frame to QImage and display it in QLabel (not implemented here)
-        pass
+        # Convert frame to QImage and display it in QLabel
+        height, width, channel = frame.shape
+        bytes_per_line = 3 * width
+        q_img = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+        pixmap = QPixmap.fromImage(q_img)
+        self.message_label.setPixmap(pixmap)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
+            self.recognition_thread.stop()
             self.close()
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
