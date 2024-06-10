@@ -7,7 +7,6 @@ import sys
 import face_recognition
 from sqlalchemy import create_engine, Table, MetaData, Column, String, Integer, LargeBinary
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime
 
 class AddEmployeeWindow(QMainWindow):
     def __init__(self):
@@ -37,7 +36,7 @@ class AddEmployeeWindow(QMainWindow):
         self.metadata = MetaData()
 
         # Reflect the employee table
-        self.employee_table = Table('employees', self.metadata, autoload_with=self.engine)
+        self.employee_table = Table('EMPLOYEE', self.metadata, autoload_with=self.engine)
 
     def setup_ui(self):
         # Create widgets
@@ -55,15 +54,13 @@ class AddEmployeeWindow(QMainWindow):
         self.input_id = QLineEdit()
         self.input_first_name = QLineEdit()
         self.input_last_name = QLineEdit()
-        self.input_dob = QDateEdit()
-        self.input_dob.setCalendarPopup(True)
-        self.input_dob.setDate(QDate.currentDate())
+        self.input_nfc_data = QLineEdit()
 
         form_layout = QFormLayout()
-        form_layout.addRow("ID:", self.input_id)
+        form_layout.addRow("Employee ID:", self.input_id)
         form_layout.addRow("First Name:", self.input_first_name)
         form_layout.addRow("Last Name:", self.input_last_name)
-        form_layout.addRow("Date of Birth:", self.input_dob)
+        form_layout.addRow("NFC Data:", self.input_nfc_data)
 
         submit_button = QPushButton("Submit")
         submit_button.clicked.connect(self.submit_data)
@@ -93,14 +90,12 @@ class AddEmployeeWindow(QMainWindow):
 
     def submit_data(self):
         if self.file_path:
-            id_ = self.input_id.text()
+            employee_id = self.input_id.text()
             first_name = self.input_first_name.text()
             last_name = self.input_last_name.text()
-            dob = self.input_dob.date().toPyDate()
+            nfc_data = self.input_nfc_data.text()
 
-            if id_ and first_name and last_name and dob:
-                age = self.calculate_age(dob)
-
+            if employee_id and first_name and last_name and nfc_data:
                 # Load image and extract facial encoding
                 image = face_recognition.load_image_file(self.file_path)
                 face_encodings = face_recognition.face_encodings(image)
@@ -116,11 +111,11 @@ class AddEmployeeWindow(QMainWindow):
                     try:
                         # Insert data into database
                         new_employee = {
-                            'id': id_,
+                            'employee_id': employee_id,
                             'first_name': first_name,
                             'last_name': last_name,
-                            'age': age,
-                            'facial_data': facial_encoding_binary
+                            'facial_data': facial_encoding_binary,
+                            'NFC_data': nfc_data
                         }
                         ins = self.employee_table.insert().values(new_employee)
                         session.execute(ins)
@@ -138,11 +133,6 @@ class AddEmployeeWindow(QMainWindow):
                 QMessageBox.warning(self, "Incomplete Information", "Please provide all fields.")
         else:
             QMessageBox.warning(self, "No File Selected", "Please select a file first.")
-
-    def calculate_age(self, dob):
-        today = datetime.today()
-        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-        return age
 
     def get_stylesheet(self):
         return """
@@ -192,7 +182,6 @@ class AddEmployeeWindow(QMainWindow):
             }
         """
 
-
 class EmployeeManagementWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -218,7 +207,7 @@ class EmployeeManagementWindow(QMainWindow):
         self.metadata = MetaData()
 
         # Reflect the employee table
-        self.employee_table = Table('employees', self.metadata, autoload_with=self.engine)
+        self.employee_table = Table('EMPLOYEE', self.metadata, autoload_with=self.engine)
 
         self.load_data()
 
@@ -231,7 +220,7 @@ class EmployeeManagementWindow(QMainWindow):
         # Table to display employee data
         self.table = QTableWidget()
         self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(['ID', 'First Name', 'Last Name', 'Age', 'Facial Data'])
+        self.table.setHorizontalHeaderLabels(['Employee ID', 'First Name', 'Last Name', 'Facial Data', 'NFC Data'])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         # Add and Remove buttons
@@ -254,12 +243,11 @@ class EmployeeManagementWindow(QMainWindow):
             result = session.query(self.employee_table).all()
             self.table.setRowCount(len(result))
             for row_idx, row in enumerate(result):
-                self.table.setItem(row_idx, 0, QTableWidgetItem(str(row.id)))
+                self.table.setItem(row_idx, 0, QTableWidgetItem(str(row.employee_id)))
                 self.table.setItem(row_idx, 1, QTableWidgetItem(row.first_name))
                 self.table.setItem(row_idx, 2, QTableWidgetItem(row.last_name))
-                self.table.setItem(row_idx, 3, QTableWidgetItem(str(row.age)))
-                self.table.setItem(row_idx, 4,
-                                   QTableWidgetItem("Facial Data Present" if row.facial_data else "No Facial Data"))
+                self.table.setItem(row_idx, 3, QTableWidgetItem("Facial Data Present" if row.facial_data else "No Facial Data"))
+                self.table.setItem(row_idx, 4, QTableWidgetItem(row.NFC_data))
         except Exception as e:
             QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
         finally:
@@ -281,7 +269,7 @@ class EmployeeManagementWindow(QMainWindow):
         Session = sessionmaker(bind=self.engine)
         session = Session()
         try:
-            session.query(self.employee_table).filter_by(id=employee_id).delete()
+            session.query(self.employee_table).filter_by(employee_id=employee_id).delete()
             session.commit()
             self.table.removeRow(selected_row)
             QMessageBox.information(self, "Employee Removed", "Employee removed successfully!")
@@ -293,51 +281,51 @@ class EmployeeManagementWindow(QMainWindow):
 
     def get_stylesheet(self):
         return """
-                    QMainWindow {
-                        background-color: #FFC0CB;  /* Pink background color */
-                    }
-                    QLabel, QPushButton, QLineEdit, QDateEdit, QTableWidget {
-                        color: #000000;  /* Black text color */
-                        font-family: 'Montserrat', sans-serif;  /* Montserrat font */
-                        font-size: 16px;
-                    }
-                    QLineEdit {
-                        background-color: #FFB6C1;  /* Light pink color for input fields */
-                        border: 2px solid #FF69B4;  /* Pink border */
-                        border-radius: 10px;
-                        padding: 10px;
-                    }
-                    QLineEdit:focus {
-                        border: 2px solid #FF1493;  /* Deep pink border on focus */
-                    }
-                    QPushButton {
-                        background-color: #FF69B4;  /* Pink button color */
-                        border: none;
-                        border-radius: 10px;
-                        padding: 10px;
-                        margin-top: 10px;
-                    }
-                    QPushButton:hover {
-                        background-color: #FF1493;  /* Deep pink button color on hover */
-                    }
-                    QFrame {
-                        background-color: #FFB6C1;  /* Light pink color for frames */
-                        border-radius: 15px;
-                        padding: 20px;
-                        margin-top: 20px;
-                    }
-                    QTableWidget {
-                        background-color: #FFFFFF;  /* White background color */
-                        border: 2px solid #FF69B4;
-                        border-radius: 10px;
-                    }
-                    QHeaderView::section {
-                        background-color: #FF69B4;
-                        color: white;
-                        padding: 5px;
-                        border: none;
-                    }
-                """
+            QMainWindow {
+                background-color: #FFC0CB;  /* Pink background color */
+            }
+            QLabel, QPushButton, QLineEdit, QDateEdit, QTableWidget {
+                color: #000000;  /* Black text color */
+                font-family: 'Montserrat', sans-serif;  /* Montserrat font */
+                font-size: 16px;
+            }
+            QLineEdit {
+                background-color: #FFB6C1;  /* Light pink color for input fields */
+                border: 2px solid #FF69B4;  /* Pink border */
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QLineEdit:focus {
+                border: 2px solid #FF1493;  /* Deep pink border on focus */
+            }
+            QPushButton {
+                background-color: #FF69B4;  /* Pink button color */
+                border: none;
+                border-radius: 10px;
+                padding: 10px;
+                margin-top: 10px;
+            }
+            QPushButton:hover {
+                background-color: #FF1493;  /* Deep pink button color on hover */
+            }
+            QFrame {
+                background-color: #FFB6C1;  /* Light pink color for frames */
+                border-radius: 15px;
+                padding: 20px;
+                margin-top: 20px;
+            }
+            QTableWidget {
+                background-color: #FFFFFF;  /* White background color */
+                border: 2px solid #FF69B4;
+                border-radius: 10px;
+            }
+            QHeaderView::section {
+                background-color: #FF69B4;
+                color: white;
+                padding: 5px;
+                border: none;
+            }
+        """
 
 def main():
     app = QApplication(sys.argv)
@@ -355,4 +343,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
