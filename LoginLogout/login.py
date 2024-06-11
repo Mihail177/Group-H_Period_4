@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QSettings, pyqtSignal
 import pymssql
 import bcrypt
 from afterLogin import AfterLoginWindow
-from passwordHash import RegistrationWindow
+from signUp import RegistrationWindow
 
 # Custom widget for gradient background
 class GradientWidget(QWidget):
