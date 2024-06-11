@@ -1,11 +1,11 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QFileDialog, \
-    QMessageBox, QLineEdit, QHBoxLayout, QFormLayout, QFrame, QSpacerItem, QSizePolicy, QDateEdit, QTableWidget, \
-    QTableWidgetItem, QHeaderView
-from PyQt6.QtGui import QPixmap, QFontDatabase, QFont
-from PyQt6.QtCore import Qt, QDate
+    QMessageBox, QLineEdit, QHBoxLayout, QFormLayout, QFrame, QSpacerItem, QSizePolicy, QTableWidget, QTableWidgetItem, \
+    QHeaderView
+from PyQt6.QtGui import QPixmap, QFont, QPalette, QColor
+from PyQt6.QtCore import Qt, QPropertyAnimation, QRect
 import sys
 import face_recognition
-from sqlalchemy import create_engine, Table, MetaData, Column, String, Integer, LargeBinary
+from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
 
 class AddEmployeeWindow(QMainWindow):
@@ -45,7 +45,7 @@ class AddEmployeeWindow(QMainWindow):
 
         self.label_image = QLabel()
         self.label_image.setFixedSize(300, 300)
-        self.label_image.setStyleSheet("border: 2px solid #FF69B4; border-radius: 10px;")
+        self.label_image.setStyleSheet("border: 2px solid #E637BF; border-radius: 10px;")
         self.label_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         choose_file_button = QPushButton("Choose File")
@@ -137,45 +137,53 @@ class AddEmployeeWindow(QMainWindow):
     def get_stylesheet(self):
         return """
             QMainWindow {
-                background-color: #FFC0CB;  /* Pink background color */
+                background-color: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 1,
+                    stop: 0 #D2F1E4, stop: 1 #FBCAEF
+                );  /* Gradient background */
             }
             QLabel, QPushButton, QLineEdit, QDateEdit, QTableWidget {
-                color: #000000;  /* Black text color */
-                font-family: 'Montserrat', sans-serif;  /* Montserrat font */
+                color: #48304D;  /* Text color */
+                font-family: 'Arial', sans-serif;  /* Arial font */
                 font-size: 16px;
             }
             QLineEdit {
-                background-color: #FFB6C1;  /* Light pink color for input fields */
-                border: 2px solid #FF69B4;  /* Pink border */
+                background-color: #F865B0;  /* Background color for input fields */
+                border: 2px solid #E637BF;  /* Border color */
                 border-radius: 10px;
                 padding: 10px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             }
             QLineEdit:focus {
-                border: 2px solid #FF1493;  /* Deep pink border on focus */
+                border: 2px solid #48304D;  /* Border color on focus */
             }
             QPushButton {
-                background-color: #FF69B4;  /* Pink button color */
+                background-color: #E637BF;  /* Button background color */
                 border: none;
                 border-radius: 10px;
                 padding: 10px;
                 margin-top: 10px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+                color: white;  /* Button text color */
             }
             QPushButton:hover {
-                background-color: #FF1493;  /* Deep pink button color on hover */
+                background-color: #F865B0;  /* Button color on hover */
+                box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.4);
             }
             QFrame {
-                background-color: #FFB6C1;  /* Light pink color for frames */
+                background-color: #FBCAEF;  /* Background color for frames */
                 border-radius: 15px;
                 padding: 20px;
                 margin-top: 20px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             }
             QTableWidget {
-                background-color: #FFFFFF;  /* White background color */
-                border: 2px solid #FF69B4;
+                background-color: #FFFFFF;  /* Table background color */
+                border: 2px solid #E637BF;
                 border-radius: 10px;
             }
             QHeaderView::section {
-                background-color: #FF69B4;
+                background-color: #E637BF;
                 color: white;
                 padding: 5px;
                 border: none;
@@ -282,45 +290,53 @@ class EmployeeManagementWindow(QMainWindow):
     def get_stylesheet(self):
         return """
             QMainWindow {
-                background-color: #FFC0CB;  /* Pink background color */
+                background-color: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 1,
+                    stop: 0 #D2F1E4, stop: 1 #FBCAEF
+                );  /* Gradient background */
             }
             QLabel, QPushButton, QLineEdit, QDateEdit, QTableWidget {
-                color: #000000;  /* Black text color */
-                font-family: 'Montserrat', sans-serif;  /* Montserrat font */
+                color: #48304D;  /* Text color */
+                font-family: 'Arial', sans-serif;  /* Arial font */
                 font-size: 16px;
             }
             QLineEdit {
-                background-color: #FFB6C1;  /* Light pink color for input fields */
-                border: 2px solid #FF69B4;  /* Pink border */
+                background-color: #F865B0;  /* Background color for input fields */
+                border: 2px solid #E637BF;  /* Border color */
                 border-radius: 10px;
                 padding: 10px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             }
             QLineEdit:focus {
-                border: 2px solid #FF1493;  /* Deep pink border on focus */
+                border: 2px solid #48304D;  /* Border color on focus */
             }
             QPushButton {
-                background-color: #FF69B4;  /* Pink button color */
+                background-color: #E637BF;  /* Button background color */
                 border: none;
                 border-radius: 10px;
                 padding: 10px;
                 margin-top: 10px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+                color: white;  /* Button text color */
             }
             QPushButton:hover {
-                background-color: #FF1493;  /* Deep pink button color on hover */
+                background-color: #F865B0;  /* Button color on hover */
+                box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.4);
             }
             QFrame {
-                background-color: #FFB6C1;  /* Light pink color for frames */
+                background-color: #FBCAEF;  /* Background color for frames */
                 border-radius: 15px;
                 padding: 20px;
                 margin-top: 20px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
             }
             QTableWidget {
-                background-color: #FFFFFF;  /* White background color */
-                border: 2px solid #FF69B4;
+                background-color: #FFFFFF;  /* Table background color */
+                border: 2px solid #E637BF;
                 border-radius: 10px;
             }
             QHeaderView::section {
-                background-color: #FF69B4;
+                background-color: #E637BF;
                 color: white;
                 padding: 5px;
                 border: none;
@@ -330,16 +346,10 @@ class EmployeeManagementWindow(QMainWindow):
 def main():
     app = QApplication(sys.argv)
 
-    # Load and apply Montserrat font
-    font_id = QFontDatabase.addApplicationFont("path/to/Montserrat-Regular.ttf")
-    if font_id != -1:
-        font_family = QFontDatabase.applicationFontFamilies(font_id)
-        if font_family:
-            app.setFont(QFont(font_family[0]))
-
     window = EmployeeManagementWindow()
     window.show()
     sys.exit(app.exec())
 
 if __name__ == "__main__":
     main()
+
