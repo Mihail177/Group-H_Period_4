@@ -4,8 +4,6 @@ from PyQt5.QtGui import QPainter, QLinearGradient, QColor, QPixmap, QFontDatabas
 from PyQt5.QtCore import Qt, QSettings, pyqtSignal
 import pymssql
 import bcrypt
-from afterLogin import AfterLoginWindow
-from passwordHash import RegistrationWindow
 
 # Custom widget for gradient background
 class GradientWidget(QWidget):
@@ -32,7 +30,7 @@ class ClickableLabel(QLabel):
         if event.button() == Qt.LeftButton:
             self.clicked.emit()
 
-class LoginWindow(GradientWidget):
+class RegistrationWindow(GradientWidget):
     def __init__(self):
         super().__init__()
         self.settings = QSettings("Group H", "MyApp")
@@ -62,13 +60,12 @@ class LoginWindow(GradientWidget):
         form_layout.setContentsMargins(100, 200, 100, 100)
 
         # Welcome and subwelcome label
-        welcome_label = QLabel("Welcome")
-        welcome_label.setStyleSheet("color: white; font-size: 85px; font-weight: bold; font-family: Berkshire Swash")
-        welcome_label.setAlignment(Qt.AlignCenter)
+        welcome_label = QLabel("Sign up")
+        welcome_label.setStyleSheet("color: white; font-size: 90px; font-weight: bold; font-family: Berkshire Swash")
         form_layout.addWidget(welcome_label)
 
-        subwelcome_label = QLabel("Please log in to your account.")
-        subwelcome_label.setStyleSheet("color: #31376F; font-size: 20px; font-weight: bold")
+        subwelcome_label = QLabel("Please fill in your email and password")
+        subwelcome_label.setStyleSheet("color: #31376F; font-size: 20px; font-weight: bold; font-family: Quicksand")
         form_layout.addWidget(subwelcome_label)
 
         # Username label and input
@@ -77,7 +74,7 @@ class LoginWindow(GradientWidget):
         form_layout.addWidget(username_label)
 
         self.email_input = QLineEdit()
-        self.email_input.setStyleSheet("background-color: white; border-radius: 15px; padding: 15px;")
+        self.email_input.setStyleSheet("background-color: white; border-radius: 15px; padding: 15px; font-family: Quicksand")
         form_layout.addWidget(self.email_input)
 
         # Password label and input
@@ -87,33 +84,14 @@ class LoginWindow(GradientWidget):
 
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.Password)
-        self.password_input.setStyleSheet("background-color: white; border-radius: 15px; padding: 15px;")
+        self.password_input.setStyleSheet("background-color: white; border-radius: 15px; padding: 15px")
         form_layout.addWidget(self.password_input)
 
-        # Create a horizontal layout for the checkbox and signup link
-        remember_signup_layout = QHBoxLayout()
-
-        # Remember me checkbox
-        self.remember_checkbox = QCheckBox("Remember me")
-        self.remember_checkbox.setStyleSheet("color: white; font-family: Baloo 2; font-weight: bold")
-        remember_signup_layout.addWidget(self.remember_checkbox)
-
-        # Sign up hyperlink
-        signup_label = ClickableLabel("Sign Up")
-        signup_label.setStyleSheet(
-            "color: white; font-family: Baloo 2; font-weight: bold; text-decoration: underline; cursor: pointer; margin-left: 90px")
-        signup_label.setCursor(QCursor(Qt.PointingHandCursor))
-        signup_label.clicked.connect(self.show_signup)
-        remember_signup_layout.addWidget(signup_label)
-
-        # Add the horizontal layout to the form layout
-        form_layout.addLayout(remember_signup_layout)
-
         # Login button
-        login_button = QPushButton("Login")
+        login_button = QPushButton("Register")
         login_button.setStyleSheet(
-            "background-color: #7976E8; color: white; border-radius: 15px; font-family: Berkshire Swash; font-weight: bold; height: 60px")
-        login_button.clicked.connect(self.login)
+            "background-color: #7976E8; color: white; border-radius: 15px; font-family: Berkshire Swash; font-weight: bold; height: 60px; margin-top: 20px")
+        login_button.clicked.connect(self.register)
         form_layout.addWidget(login_button)
 
         # Add the form layout to the grid layout
@@ -122,31 +100,22 @@ class LoginWindow(GradientWidget):
         # Set layout
         self.setLayout(layout)
 
-        # Load saved credentials if available
-        self.load_credentials()
-
-    def load_credentials(self):
-        saved_email = self.settings.value("email", "")
-        saved_password_hash = self.settings.value("password", "")
-
-        if saved_email and saved_password_hash:
-            self.email_input.setText(saved_email)
-            self.password_input.setText(saved_password_hash)
-            self.remember_checkbox.setChecked(True)
-
-    def login(self):
+    def register(self):
         email = self.email_input.text()
         password = self.password_input.text()
 
+        errors = []
         if not email or not password:
-            QMessageBox.critical(self, "Error", "Please enter the required information")
-            return
-
+            errors.append("Please fill in the required information")
         if "@" not in email:
-            QMessageBox.critical(self, "Error", "Your email must contain the character '@'")
+            errors.append("Your email must contain the character @")
+
+        if errors:
+            QMessageBox.critical(self, "Error", "\n".join(errors))
             return
 
-        # Database connection
+        hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
         try:
             connection = pymssql.connect(
                 server='facesystemlock.database.windows.net',
@@ -156,47 +125,21 @@ class LoginWindow(GradientWidget):
             )
 
             cursor = connection.cursor(as_dict=True)
-            sql = "SELECT * FROM dbo.ADMIN WHERE email_address = %s"
-            cursor.execute(sql, (email,))
-            result = cursor.fetchone()
+            sql = "INSERT INTO dbo.ADMIN (email_address, password) VALUES (%s, %s)"
+            cursor.execute(sql, (email, hashed_password))
+            connection.commit()
+            cursor.close()
+            connection.close()
 
-            if result:
-                hashedPassword = result['password']
-
-                # Verify the entered password against the stored hashed password
-                if bcrypt.checkpw(password.encode(), hashedPassword.encode()):
-                    if self.remember_checkbox.isChecked():
-                        self.settings.setValue("email", email)
-                        self.settings.setValue("password", password)
-                    else:
-                        self.settings.remove("email")
-                        self.settings.remove("password")
-
-                    QMessageBox.information(self, "Login", f"Login Successful. Welcome!")
-                    self.close()
-                    self.after_login_window = AfterLoginWindow(self.settings, self)
-                    self.after_login_window.show()
-                else:
-                    QMessageBox.critical(self, "Error", "Wrong password")
-            else:
-                QMessageBox.critical(self, "Error", "User not found")
-        except pymssql.InterfaceError as e:
-            QMessageBox.critical(self, "Error", f"Error connecting to database: {e}")
+            QMessageBox.information(self, "Success", "Registration successful!")
+            self.close()
         except pymssql.DatabaseError as e:
             QMessageBox.critical(self, "Error", f"Database error: {e}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An unexpected error occurred: {e}")
-        finally:
-            if 'connection' in locals() and connection:
-                cursor.close()
-                connection.close()
 
-    def show_signup(self):
-        self.signup_window = RegistrationWindow()
-        self.signup_window.show()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
     # Load Berkshire font
     try:
         font_id = QFontDatabase.addApplicationFont("BerkshireSwash-Regular.ttf")
@@ -206,18 +149,6 @@ if __name__ == '__main__':
             berkshire_font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
             print(f"Loaded font family: {berkshire_font_family}")
             app.setFont(QFont(berkshire_font_family))
-    except Exception as e:
-        print(f"Error loading font: {e}")
-
-    # Load Baloo font
-    try:
-        font_id = QFontDatabase.addApplicationFont("Baloo2-VariableFont_wght.ttf")
-        if font_id == -1:
-            print("Failed to load font")
-        else:
-            baloo_font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-            print(f"Loaded font family: {baloo_font_family}")
-            app.setFont(QFont(baloo_font_family))
     except Exception as e:
         print(f"Error loading font: {e}")
 
@@ -233,7 +164,18 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Error loading font: {e}")
 
-    login_window = LoginWindow()
-    login_window.show()
+    # Load Baloo font
+    try:
+        font_id = QFontDatabase.addApplicationFont("Baloo2-VariableFont_wght.ttf")
+        if font_id == -1:
+            print("Failed to load font")
+        else:
+            baloo_font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+            print(f"Loaded font family: {baloo_font_family}")
+            app.setFont(QFont(baloo_font_family))
+    except Exception as e:
+        print(f"Error loading font: {e}")
 
+    regis_window = RegistrationWindow()
+    regis_window.show()
     sys.exit(app.exec_())
