@@ -4,7 +4,6 @@ from PyQt5.QtGui import QPainter, QLinearGradient, QColor, QPixmap, QFontDatabas
 from PyQt5.QtCore import Qt, QSettings, pyqtSignal
 import pymssql
 import bcrypt
-from afterLogin import AfterLoginWindow
 from signUp import RegistrationWindow
 
 # Custom widget for gradient background
@@ -174,6 +173,7 @@ class LoginWindow(GradientWidget):
 
                     QMessageBox.information(self, "Login", f"Login Successful. Welcome!")
                     self.close()
+                    from afterLogin import AfterLoginWindow
                     self.after_login_window = AfterLoginWindow(self.settings, self)
                     self.after_login_window.show()
                 else:
