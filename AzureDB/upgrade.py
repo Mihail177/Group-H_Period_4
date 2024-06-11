@@ -94,14 +94,14 @@ class MainWindow(QWidget):
 
         self.setLayout(self.layout)
 
-    def check_room_exists(self, mac_address):
-        query = session.query(room_table).filter_by(mac_address=mac_address).first()
+    def check_room_exists(self, ip_address):
+        query = session.query(room_table).filter_by(ip_address=ip_address).first()
         return query is not None
 
     def register_room(self):
         room_number = self.room_input.text()
         if room_number:
-            new_room = room_table.insert().values(room_number=room_number, mac_address=self.ip_address)
+            new_room = room_table.insert().values(room_number=room_number, ip_address=self.ip_address)
             session.execute(new_room)
             session.commit()
             self.message_label.setText(f"Room {room_number} registered successfully with IP {self.ip_address}.")
