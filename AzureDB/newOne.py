@@ -4,14 +4,17 @@ import dlib
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout, QLineEdit
 from PyQt5.QtGui import QPalette, QBrush, QLinearGradient, QColor
-from PyQt5.QtCore import Qt, QTimer, QDateTime
-from sqlalchemy import create_engine, Table, MetaData, insert
+from PyQt5.QtCore import Qt, QTimer
+from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
-from picamera2 import Picamera2
+from picamera2 import Picamera2, MappedArray
+from picamera2.encoders import JpegEncoder
+from picamera2.outputs import FileOutput
 import cv2
 import os
-from time import sleep
 import pigpio
+from time import sleep
+from datetime import datetime
 
 # Paths to the model files
 predictor_path = 'shape_predictor_68_face_landmarks.dat'
@@ -133,7 +136,7 @@ class MainWindow(QWidget):
         self.layout.addWidget(self.nfc_button)
 
         self.result_label = QLabel(self)
-        self.result_label.setStyleSheet("font-size: 18px; color: white;")
+        self.result_label.setStyleSheet("font-size: 14px; color: white;")
         self.result_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.result_label)
 
@@ -152,15 +155,22 @@ class MainWindow(QWidget):
             known_names.append(full_name)
             known_ids.append(employee.id)
 
-        # Instead of opening the camera, simulate the recognition process
-        simulated_frame = cv2.imread("path_to_test_image.jpg")  # Replace with the path to your test image
-        gray = cv2.cvtColor(simulated_frame, cv2.COLOR_BGR2GRAY)
+        # Initialize Picamera2
+        picam2 = Picamera2()
+        config = picam2.create_preview_configuration(main={"format": "RGB888", "size": (640, 480)})
+        picam2.configure(config)
+        picam2.start()
+
+        frame = picam2.capture_array()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = detector(gray)
 
-        recognized = False
+        recognized_name = "Unknown"
+        recognized_id = None
+
         for face in faces:
             landmarks = predictor(gray, face)
-            face_descriptor = face_rec_model.compute_face_descriptor(simulated_frame, landmarks)
+            face_descriptor = face_rec_model.compute_face_descriptor(frame, landmarks)
             np_face_descriptor = np.array(face_descriptor)
 
             # Compare with known face descriptors
@@ -177,24 +187,24 @@ class MainWindow(QWidget):
 
             # Set a threshold for considering a face as recognized (e.g., 0.6)
             if min_distance < 0.6:
-                recognized = True
-                self.result_label.setText(f"Recognized {matched_name}. Access granted.")
-                self.log_access(matched_id)
+                recognized_name = matched_name
+                recognized_id = matched_id
+                self.result_label.setText(f"Recognized {recognized_name}. Access granted.")
+                self.log_access(recognized_id)
                 self.open_door()
-                break
-
-        if not recognized:
-            self.result_label.setText("Face not recognized. Access denied.")
+            else:
+                self.result_label.setText("Face does not match. Access denied.")
+                
+        picam2.stop()
 
     def log_access(self, employee_id):
-        current_time = QDateTime.currentDateTime()
         room_number = session.query(room_table).filter_by(ip_address=self.ip_address).first().room_number
-        new_log = log_table.insert().values(employee_id=employee_id, room_number=room_number, timestamp=current_time.toString(Qt.ISODate))
+        current_time = datetime.now()
+        new_log = log_table.insert().values(employee_id=employee_id, room_number=room_number, timestamp=current_time)
         session.execute(new_log)
         session.commit()
 
     def open_door(self):
-        # Start the pigpio daemon
         os.system("sudo pigpiod")
         sleep(1)  # Wait a bit to ensure pigpiod has started
 
@@ -204,44 +214,22 @@ class MainWindow(QWidget):
             return
 
         SERVO_PIN = 18
-
-        def set_servo_pulsewidth(pulsewidth):
-            pi.set_servo_pulsewidth(SERVO_PIN, pulsewidth)
-
-        try:
-            set_servo_pulsewidth(1500)  # Open the door
-            QTimer.singleShot(60000, self.close_door)  # Close the door after 1 minute
-        finally:
-            pi.set_servo_pulsewidth(SERVO_PIN, 0)
-            pi.stop()
+        pi.set_servo_pulsewidth(SERVO_PIN, 1500)  # Open the door
+        QTimer.singleShot(60000, self.close_door)  # Close the door after 1 minute
 
     def close_door(self):
-        # Start the pigpio daemon
-        os.system("sudo pigpiod")
-        sleep(1)  # Wait a bit to ensure pigpiod has started
-
         pi = pigpio.pi()
-        if not pi.connected:
-            print("not connected")
-            return
-
-        SERVO_PIN = 18
-
-        def set_servo_pulsewidth(pulsewidth):
-            pi.set_servo_pulsewidth(SERVO_PIN, pulsewidth)
-
-        try:
-            set_servo_pulsewidth(500)  # Close the door
-        finally:
+        if pi.connected:
+            SERVO_PIN = 18
+            pi.set_servo_pulsewidth(SERVO_PIN, 500)  # Close the door
+            sleep(2)
             pi.set_servo_pulsewidth(SERVO_PIN, 0)
             pi.stop()
-            self.reset_to_main_menu()
+            os.system("sudo killall pigpiod")
+        self.reset_to_main()
 
-    def reset_to_main_menu(self):
-        for i in reversed(range(self.layout.count())):
-            widget = self.layout.itemAt(i).widget()
-            if widget:
-                widget.setParent(None)
+    def reset_to_main(self):
+        self.result_label.clear()
         self.show_main_menu()
 
     def keyPressEvent(self, event):
