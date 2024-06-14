@@ -30,13 +30,13 @@ engine = create_engine(connection_string)
 metadata = MetaData()
 
 # Reflect the employee table
-employee_table = Table('employeez', metadata, autoload_with=engine)
+employee_table = Table('EMPLOYEE', metadata, autoload_with=engine)
 
 # Create a session
 Session = sessionmaker(bind=engine)
 session = Session()
 
-# Retrieve all rows from the employeez table
+# Retrieve all rows from the EMPLOYEE table
 employees = session.query(employee_table).all()
 
 # Close the session
@@ -50,7 +50,8 @@ for employee in employees:
     face_descriptor_blob = employee.facial_data
     face_descriptor = np.frombuffer(face_descriptor_blob, dtype=np.float64)  # Adjust this line based on how your data is stored
     known_face_descriptors.append(face_descriptor)
-    known_names.append(employee.name)
+    full_name = f"{employee.first_name} {employee.last_name}"  # Concatenate first and last name
+    known_names.append(full_name)
 
 # Open a connection to the webcam
 cap = cv2.VideoCapture(0)
