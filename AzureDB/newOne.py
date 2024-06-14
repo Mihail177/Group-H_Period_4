@@ -1,20 +1,15 @@
 import sys
 import socket
+import cv2
 import dlib
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout, QLineEdit
 from PyQt5.QtGui import QPalette, QBrush, QLinearGradient, QColor
-from PyQt5.QtCore import Qt, QTimer
-from sqlalchemy import create_engine, Table, MetaData
+from PyQt5.QtCore import Qt
+from sqlalchemy import create_engine, Table, MetaData, func
 from sqlalchemy.orm import sessionmaker
-from picamera2 import Picamera2, MappedArray
-from picamera2.encoders import JpegEncoder
-from picamera2.outputs import FileOutput
-import cv2
-import os
-import pigpio
-from time import sleep
 from datetime import datetime
+from picamera2 import Picamera2, Preview
 
 # Paths to the model files
 predictor_path = 'shape_predictor_68_face_landmarks.dat'
@@ -49,6 +44,7 @@ log_table = Table('LOG', metadata, autoload_with=engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
 def get_ip_address():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -57,6 +53,7 @@ def get_ip_address():
     finally:
         s.close()
     return ip_address
+
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -135,106 +132,89 @@ class MainWindow(QWidget):
         # Connect NFC functionality here
         self.layout.addWidget(self.nfc_button)
 
-        self.result_label = QLabel(self)
-        self.result_label.setStyleSheet("font-size: 14px; color: white;")
-        self.result_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.result_label)
+        self.recognition_label = QLabel(self)
+        self.recognition_label.setStyleSheet("font-size: 18px; color: white;")
+        self.recognition_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(self.recognition_label)
 
     def run_facial_recognition(self):
         # Prepare known face descriptors
         known_face_descriptors = []
         known_names = []
-        known_ids = []
+        known_employee_ids = []
 
         employees = session.query(employee_table).all()
         for employee in employees:
             face_descriptor_blob = employee.facial_data
-            face_descriptor = np.frombuffer(face_descriptor_blob, dtype=np.float64)  # Adjust this line based on how your data is stored
+            face_descriptor = np.frombuffer(face_descriptor_blob,
+                                            dtype=np.float64)  # Adjust this line based on how your data is stored
             known_face_descriptors.append(face_descriptor)
             full_name = f"{employee.first_name} {employee.last_name}"  # Concatenate first and last name
             known_names.append(full_name)
-            known_ids.append(employee.id)
+            known_employee_ids.append(employee.employee_id)
 
         # Initialize Picamera2
         picam2 = Picamera2()
-        config = picam2.create_preview_configuration(main={"format": "RGB888", "size": (640, 480)})
-        picam2.configure(config)
+        picam2.configure(picam2.create_still_configuration())
         picam2.start()
-
+        
+        # Capture image
         frame = picam2.capture_array()
+        picam2.stop()
+
+        if frame is None:
+            self.recognition_label.setText("Failed to capture image.")
+            return
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = detector(gray)
 
-        recognized_name = "Unknown"
-        recognized_id = None
-
-        for face in faces:
-            landmarks = predictor(gray, face)
-            face_descriptor = face_rec_model.compute_face_descriptor(frame, landmarks)
-            np_face_descriptor = np.array(face_descriptor)
-
-            # Compare with known face descriptors
-            min_distance = float('inf')
-            matched_name = "Unknown"
-            matched_id = None
-
-            for i, known_face_descriptor in enumerate(known_face_descriptors):
-                distance = np.linalg.norm(known_face_descriptor - np_face_descriptor)
-                if distance < min_distance:
-                    min_distance = distance
-                    matched_name = known_names[i]
-                    matched_id = known_ids[i]
-
-            # Set a threshold for considering a face as recognized (e.g., 0.6)
-            if min_distance < 0.6:
-                recognized_name = matched_name
-                recognized_id = matched_id
-                self.result_label.setText(f"Recognized {recognized_name}. Access granted.")
-                self.log_access(recognized_id)
-                self.open_door()
-            else:
-                self.result_label.setText("Face does not match. Access denied.")
-                
-        picam2.stop()
-
-    def log_access(self, employee_id):
-        room_number = session.query(room_table).filter_by(ip_address=self.ip_address).first().room_number
-        current_time = datetime.now()
-        new_log = log_table.insert().values(employee_id=employee_id, room_number=room_number, timestamp=current_time)
-        session.execute(new_log)
-        session.commit()
-
-    def open_door(self):
-        os.system("sudo pigpiod")
-        sleep(1)  # Wait a bit to ensure pigpiod has started
-
-        pi = pigpio.pi()
-        if not pi.connected:
-            print("not connected")
+        if len(faces) == 0:
+            self.recognition_label.setText("No face detected.")
             return
 
-        SERVO_PIN = 18
-        pi.set_servo_pulsewidth(SERVO_PIN, 1500)  # Open the door
-        QTimer.singleShot(60000, self.close_door)  # Close the door after 1 minute
+        face = faces[0]  # Process the first detected face
+        landmarks = predictor(gray, face)
+        face_descriptor = face_rec_model.compute_face_descriptor(frame, landmarks)
+        np_face_descriptor = np.array(face_descriptor)
 
-    def close_door(self):
-        pi = pigpio.pi()
-        if pi.connected:
-            SERVO_PIN = 18
-            pi.set_servo_pulsewidth(SERVO_PIN, 500)  # Close the door
-            sleep(2)
-            pi.set_servo_pulsewidth(SERVO_PIN, 0)
-            pi.stop()
-            os.system("sudo killall pigpiod")
-        self.reset_to_main()
+        # Compare with known face descriptors
+        min_distance = float('inf')
+        matched_name = "Unknown"
+        matched_employee_id = None
 
-    def reset_to_main(self):
-        self.result_label.clear()
-        self.show_main_menu()
+        for i, known_face_descriptor in enumerate(known_face_descriptors):
+            distance = np.linalg.norm(known_face_descriptor - np_face_descriptor)
+            if distance < min_distance:
+                min_distance = distance
+                matched_name = known_names[i]
+                matched_employee_id = known_employee_ids[i]
+
+        # Set a threshold for considering a face as recognized (e.g., 0.6)
+        if min_distance < 0.6:
+            name = matched_name
+        else:
+            name = "Unknown"
+            matched_employee_id = None
+
+        self.recognition_label.setText(f"Recognized: {name}")
+
+        # Store the log in the database if recognized
+        if matched_employee_id:
+            room = session.query(room_table).filter_by(ip_address=self.ip_address).first()
+            if room:
+                log_entry = log_table.insert().values(
+                    employee_id=matched_employee_id,
+                    room_number=room.room_number,
+                    date_and_time=datetime.now()  # Provide an explicit value for the date_and_time column
+                )
+                session.execute(log_entry)
+                session.commit()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.close()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
