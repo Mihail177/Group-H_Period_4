@@ -13,10 +13,6 @@ SERVO_PIN = 18
 def set_servo_pulsewidth(pulsewidth):
     pi.set_servo_pulsewidth(SERVO_PIN,pulsewidth)
 
-# set_servo_pulsewidth(2500)
-# sleep(2)
-
-
 try:
     print("setting servo to mid pos")
     set_servo_pulsewidth(1500)
