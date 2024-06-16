@@ -3,16 +3,13 @@ import socket
 import cv2
 import dlib
 import numpy as np
+from datetime import datetime
+from picamera2 import Picamera2, Preview
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout, QLineEdit
 from PyQt5.QtGui import QPalette, QBrush, QLinearGradient, QColor
 from PyQt5.QtCore import Qt
 from sqlalchemy import create_engine, Table, MetaData, func
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-from picamera2 import Picamera2, Preview
-from time import sleep
-import pigpio
-import os
 
 # Paths to the model files
 predictor_path = 'shape_predictor_68_face_landmarks.dat'
@@ -156,18 +153,29 @@ class MainWindow(QWidget):
             known_names.append(full_name)
             known_employee_ids.append(employee.employee_id)
 
-        # Initialize Picamera2
-        picam2 = Picamera2()
-        picam2.configure(picam2.create_still_configuration())
-        picam2.start()
-        
-        # Capture image
-        frame = picam2.capture_array()
-        picam2.stop()
+        # Capture image using OpenCV or Picamera2 based on user selection
+        use_picamera2 = True  # Set this flag based on user preference
 
-        if frame is None:
-            self.recognition_label.setText("Failed to capture image.")
-            return
+        if use_picamera2:
+            # Using Picamera2
+            picam2 = Picamera2()
+            config = picam2.create_preview_configuration(main={"size": (640, 480)})
+            picam2.configure(config)
+            picam2.start_preview(Preview.QTGL)
+
+            # Capture image
+            frame = picam2.capture_array()
+            picam2.stop_preview()
+            picam2.close()
+        else:
+            # Using OpenCV
+            cap = cv2.VideoCapture(0)
+            ret, frame = cap.read()
+            cap.release()
+
+            if not ret:
+                self.recognition_label.setText("Failed to capture image.")
+                return
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = detector(gray)
@@ -213,34 +221,6 @@ class MainWindow(QWidget):
                 )
                 session.execute(log_entry)
                 session.commit()
-                
-                # Open the door
-                self.open_door()
-
-    def open_door(self):
-        os.system("sudo pigpiod")
-        sleep(1)
-
-        pi = pigpio.pi()
-        if not pi.connected:
-            self.recognition_label.setText("Failed to connect to the servo motor.")
-            return
-        
-        SERVO_PIN = 18
-        def set_servo_pulsewidth(pulsewidth):
-            pi.set_servo_pulsewidth(SERVO_PIN, pulsewidth)
-
-        try:
-            # Open the door (set servo to open position)
-            set_servo_pulsewidth(2500)
-            sleep(60)  # Wait for 1 minute
-            # Close the door (set servo to close position)
-            set_servo_pulsewidth(500)
-            sleep(2)
-        finally:
-            pi.set_servo_pulsewidth(SERVO_PIN, 0)
-            pi.stop()
-            os.system("sudo killall pigpiod")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -252,3 +232,4 @@ if __name__ == '__main__':
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
+# aaa

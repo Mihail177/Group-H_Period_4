@@ -1,15 +1,19 @@
-# afterLogin.py
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QMessageBox, QHBoxLayout, QFrame, QSpacerItem, QSizePolicy, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QLineEdit, QFormLayout
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QMessageBox, \
+    QHBoxLayout, QFrame, QSpacerItem, QSizePolicy, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QLineEdit, \
+    QFormLayout
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-import sys
 import face_recognition
+from PyQt5.QtGui import QFontDatabase, QFont, QIcon
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
+
 
 class AfterLoginWindow(QMainWindow):
     def __init__(self, settings, login_window):
         super().__init__()
+        self.label_image = None
         self.settings = settings
         self.login_window = login_window
         self.initUI()
@@ -42,7 +46,10 @@ class AfterLoginWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        main_layout = QVBoxLayout(central_widget)
+        main_layout = QHBoxLayout(central_widget)
+
+        # Left side layout
+        left_layout = QVBoxLayout()
 
         # Add a logout button
         logout_button = QPushButton("Logout")
@@ -50,159 +57,14 @@ class AfterLoginWindow(QMainWindow):
             "background-color: #FF6347; color: white; border-radius: 15px; font-family: Baloo 2; font-weight: bold; height: 60px")
         logout_button.clicked.connect(self.logout)
 
-        # Table to display employee data
-        self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(['Employee ID', 'First Name', 'Last Name', 'Facial Data', 'NFC Data'])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        choose_file_button = QPushButton("Choose File")
+        choose_file_button.clicked.connect(self.choose_file)
 
         # Add and Remove buttons
-        button_layout = QHBoxLayout()
         add_button = QPushButton("Add Employee")
         add_button.clicked.connect(self.open_add_employee_form)
         remove_button = QPushButton("Remove Employee")
         remove_button.clicked.connect(self.remove_employee)
-
-        button_layout.addWidget(add_button)
-        button_layout.addWidget(remove_button)
-
-        main_layout.addWidget(self.table)
-        main_layout.addLayout(button_layout)
-        main_layout.addWidget(logout_button)
-
-    def logout(self):
-        # Clear the saved credentials
-        self.settings.remove("email")
-        self.settings.remove("password")
-        QMessageBox.information(self, "Logout", "You have been logged out.")
-        self.close()
-        self.login_window.show()
-
-    def load_data(self):
-        Session = sessionmaker(bind=self.engine)
-        session = Session()
-        try:
-            result = session.query(self.employee_table).all()
-            self.table.setRowCount(len(result))
-            for row_idx, row in enumerate(result):
-                self.table.setItem(row_idx, 0, QTableWidgetItem(str(row.employee_id)))
-                self.table.setItem(row_idx, 1, QTableWidgetItem(row.first_name))
-                self.table.setItem(row_idx, 2, QTableWidgetItem(row.last_name))
-                self.table.setItem(row_idx, 3, QTableWidgetItem("Facial Data Present" if row.facial_data else "No Facial Data"))
-                self.table.setItem(row_idx, 4, QTableWidgetItem(row.NFC_data))
-        except Exception as e:
-            QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
-        finally:
-            session.close()
-
-    def open_add_employee_form(self):
-        self.add_employee_window = AddEmployeeWindow(self.engine, self.employee_table)
-        self.add_employee_window.show()
-
-    def remove_employee(self):
-        selected_items = self.table.selectedItems()
-        if not selected_items:
-            QMessageBox.warning(self, "No Selection", "Please select an employee to remove.")
-            return
-
-        selected_row = selected_items[0].row()
-        employee_id = self.table.item(selected_row, 0).text()
-
-        Session = sessionmaker(bind=self.engine)
-        session = Session()
-        try:
-            session.query(self.employee_table).filter_by(employee_id=employee_id).delete()
-            session.commit()
-            self.table.removeRow(selected_row)
-            QMessageBox.information(self, "Employee Removed", "Employee removed successfully!")
-        except Exception as e:
-            session.rollback()
-            QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
-        finally:
-            session.close()
-
-    def get_stylesheet(self):
-        return """
-            QMainWindow {
-                background-color: qlineargradient(
-                    x1: 0, y1: 0, x2: 1, y2: 1,
-                    stop: 0 #D2F1E4, stop: 1 #FBCAEF
-                );  /* Gradient background */
-            }
-            QLabel, QPushButton, QLineEdit, QDateEdit, QTableWidget {
-                color: #48304D;  /* Text color */
-                font-family: 'Arial', sans-serif;  /* Arial font */
-                font-size: 16px;
-            }
-            QLineEdit {
-                background-color: #F865B0;  /* Background color for input fields */
-                border: 2px solid #E637BF;  /* Border color */
-                border-radius: 10px;
-                padding: 10px;
-                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-            }
-            QLineEdit:focus {
-                border: 2px solid #48304D;  /* Border color on focus */
-            }
-            QPushButton {
-                background-color: #E637BF;  /* Button background color */
-                border: none;
-                border-radius: 10px;
-                padding: 10px;
-                margin-top: 10px;
-                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-                color: white;  /* Button text color */
-            }
-            QPushButton:hover {
-                background-color: #F865B0;  /* Button color on hover */
-                box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.4);
-            }
-            QFrame {
-                background-color: #FBCAEF;  /* Background color for frames */
-                border-radius: 15px;
-                padding: 20px;
-                margin-top: 20px;
-                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-            }
-            QTableWidget {
-                background-color: #FFFFFF;  /* Table background color */
-                border: 2px solid #E637BF;
-                border-radius: 10px;
-            }
-            QHeaderView::section {
-                background-color: #E637BF;
-                color: white;
-                padding: 5px;
-                border: none;
-            }
-        """
-
-class AddEmployeeWindow(QMainWindow):
-    def __init__(self, engine, employee_table):
-        super().__init__()
-        self.engine = engine
-        self.employee_table = employee_table
-        self.setWindowTitle("Add New Employee")
-        self.setGeometry(100, 100, 800, 600)
-        self.setStyleSheet(self.get_stylesheet())
-
-        self.setup_ui()
-
-        # Initialize file_path variable to store selected file path
-        self.file_path = None
-
-    def setup_ui(self):
-        # Create widgets
-        frame = QFrame()
-        frame_layout = QVBoxLayout(frame)
-
-        self.label_image = QLabel()
-        self.label_image.setFixedSize(300, 300)
-        self.label_image.setStyleSheet("border: 2px solid #E637BF; border-radius: 10px;")
-        self.label_image.setAlignment(Qt.AlignCenter)
-
-        choose_file_button = QPushButton("Choose File")
-        choose_file_button.clicked.connect(self.choose_file)
 
         self.input_id = QLineEdit()
         self.input_first_name = QLineEdit()
@@ -218,19 +80,40 @@ class AddEmployeeWindow(QMainWindow):
         submit_button = QPushButton("Submit")
         submit_button.clicked.connect(self.submit_data)
 
-        frame_layout.addWidget(self.label_image)
-        frame_layout.addWidget(choose_file_button)
-        frame_layout.addLayout(form_layout)
-        frame_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Expanding))
-        frame_layout.addWidget(submit_button, alignment=Qt.AlignBottom)
+        left_layout.addWidget(add_button)
+        left_layout.addWidget(remove_button)
+        left_layout.addWidget(logout_button)
+        left_layout.addWidget(choose_file_button)
 
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
+        left_layout.addStretch()  # Add a stretch to push the buttons to the top
 
-        main_layout = QHBoxLayout(central_widget)
-        main_layout.addStretch()
-        main_layout.addWidget(frame)
-        main_layout.addStretch()
+        # Center layout
+        center_layout = QVBoxLayout()
+
+        # Table to display employee data
+        self.table = QTableWidget()
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(['Employee ID', 'First Name', 'Last Name', 'Facial Data', 'NFC Data'])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        center_layout.addWidget(self.table)
+
+        # Right side layout (empty for now, reserved for future use)
+        right_layout = QVBoxLayout()
+        right_layout.addStretch()  # Add a stretch to make it occupy space
+
+        # Add the layouts to the main layout with spacers
+        main_layout.addLayout(left_layout, 1)
+        main_layout.addLayout(center_layout, 3)  # Center layout takes 3 parts of the grid
+        main_layout.addLayout(right_layout, 1)  # Right layout takes 1 part of the grid
+
+    def logout(self):
+        # Clear the saved credentials
+        self.settings.remove("email")
+        self.settings.remove("password")
+        QMessageBox.information(self, "Logout", "You have been logged out.")
+        self.close()
+        self.login_window.show()
 
     def choose_file(self):
         file_dialog = QFileDialog(self)
@@ -287,69 +170,215 @@ class AddEmployeeWindow(QMainWindow):
         else:
             QMessageBox.warning(self, "No File Selected", "Please select a file first.")
 
+    def load_data(self):
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            result = session.query(self.employee_table).all()
+            self.table.setRowCount(len(result))
+            for row_idx, row in enumerate(result):
+                self.table.setItem(row_idx, 0, QTableWidgetItem(str(row.employee_id)))
+                self.table.setItem(row_idx, 1, QTableWidgetItem(row.first_name))
+                self.table.setItem(row_idx, 2, QTableWidgetItem(row.last_name))
+                self.table.setItem(row_idx, 3,
+                                   QTableWidgetItem("Facial Data Present" if row.facial_data else "No Facial Data"))
+                self.table.setItem(row_idx, 4, QTableWidgetItem(row.NFC_data))
+        except Exception as e:
+            QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
+        finally:
+            session.close()
+
+    def load_selected_table(self, current, previous):
+        table_name = current.text().lower()
+        if table_name == "employee":
+            self.load_employee_data()
+            self.add_button.setVisible(True)
+            self.remove_button.setVisible(True)
+        else:
+            self.add_button.setVisible(False)
+            self.remove_button.setVisible(True)
+            if table_name == "admin":
+                self.load_admin_data()
+            elif table_name == "log":
+                self.load_log_data()
+            elif table_name == "room":
+                self.load_room_data()
+
+    def load_employee_data(self):
+        self.table.clear()
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(['Employee ID', 'First Name', 'Last Name', 'Facial Data', 'NFC Data'])
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            result = session.query(self.employee_table).all()
+            self.table.setRowCount(len(result))
+            for row_idx, row in enumerate(result):
+                self.table.setItem(row_idx, 0, QTableWidgetItem(str(row.employee_id)))
+                self.table.setItem(row_idx, 1, QTableWidgetItem(row.first_name))
+                self.table.setItem(row_idx, 2, QTableWidgetItem(row.last_name))
+                self.table.setItem(row_idx, 3,
+                                   QTableWidgetItem("Facial Data Present" if row.facial_data else "No Facial Data"))
+                self.table.setItem(row_idx, 4, QTableWidgetItem(row.NFC_data))
+        except Exception as e:
+            QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
+        finally:
+            session.close()
+
+    def load_admin_data(self):
+        self.table.clear()
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(['Email', 'Password'])
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            result = session.query(self.admin_table).all()
+            self.table.setRowCount(len(result))
+            for row_idx, row in enumerate(result):
+                self.table.setItem(row_idx, 0, QTableWidgetItem(row.email))
+                self.table.setItem(row_idx, 1, QTableWidgetItem(row.password))
+        except Exception as e:
+            QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
+        finally:
+            session.close()
+
+    def load_log_data(self):
+        self.table.clear()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(['Date', 'Time', 'Room Number', 'Employee ID'])
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            result = session.query(self.log_table).all()
+            self.table.setRowCount(len(result))
+            for row_idx, row in enumerate(result):
+                self.table.setItem(row_idx, 0, QTableWidgetItem(str(row.date)))
+                self.table.setItem(row_idx, 1, QTableWidgetItem(str(row.time)))
+                self.table.setItem(row_idx, 2, QTableWidgetItem(str(row.room_number)))
+                self.table.setItem(row_idx, 3, QTableWidgetItem(str(row.employee_id)))
+        except Exception as e:
+            QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
+        finally:
+            session.close()
+
+    def load_room_data(self):
+        self.table.clear()
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(['Room Number', 'Purpose', 'Access List'])
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            result = session.query(self.room_table).all()
+            self.table.setRowCount(len(result))
+            for row_idx, row in enumerate(result):
+                self.table.setItem(row_idx, 0, QTableWidgetItem(row.room_number))
+                self.table.setItem(row_idx, 1, QTableWidgetItem(row.purpose))
+                self.table.setItem(row_idx, 2, QTableWidgetItem(row.access_list))
+        except Exception as e:
+            QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
+        finally:
+            session.close()
+
+    def remove_employee(self):
+        employee_id, ok = QInputDialog.getText(self, 'Remove Employee', 'Enter Employee ID:')
+        if ok:
+            Session = sessionmaker(bind=self.engine)
+            session = Session()
+            try:
+                employee = session.query(self.employee_table).filter_by(employee_id=employee_id).first()
+                if employee:
+                    session.delete(employee)
+                    session.commit()
+                    QMessageBox.information(self, "Remove Employee", "Employee removed successfully!")
+                    self.load_employee_data()
+                else:
+                    QMessageBox.warning(self, "Remove Employee", "Employee not found!")
+            except Exception as e:
+                session.rollback()
+                QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
+            finally:
+                session.close()
+
+    def open_add_employee_form(self):
+        self.add_employee_form = QWidget()
+        self.add_employee_form.setWindowTitle("Add Employee")
+        self.add_employee_form.setGeometry(100, 100, 400, 300)
+
+        layout = QVBoxLayout()
+
+        self.input_id = QLineEdit()
+        self.input_first_name = QLineEdit()
+        self.input_last_name = QLineEdit()
+        self.input_nfc_data = QLineEdit()
+
+        form_layout = QFormLayout()
+        form_layout.addRow("Employee ID:", self.input_id)
+        form_layout.addRow("First Name:", self.input_first_name)
+        form_layout.addRow("Last Name:", self.input_last_name)
+        form_layout.addRow("NFC Data:", self.input_nfc_data)
+
+        self.label_image = QLabel()
+        self.label_image.setFixedSize(200, 200)
+        self.label_image.setAlignment(Qt.AlignCenter)
+        form_layout.addRow("Image:", self.label_image)
+
+        choose_file_button = QPushButton("Choose File")
+        choose_file_button.clicked.connect(self.choose_file)
+
+        submit_button = QPushButton("Submit")
+        submit_button.clicked.connect(self.submit_data)
+
+        layout.addLayout(form_layout)
+        layout.addWidget(choose_file_button)
+        layout.addWidget(submit_button)
+
+        self.add_employee_form.setLayout(layout)
+        self.add_employee_form.show()
+
     def get_stylesheet(self):
         return """
-            QMainWindow {
-                background-color: qlineargradient(
-                    x1: 0, y1: 0, x2: 1, y2: 1,
-                    stop: 0 #D2F1E4, stop: 1 #FBCAEF
-                );  /* Gradient background */
-            }
-            QLabel, QPushButton, QLineEdit, QDateEdit, QTableWidget {
-                color: #48304D;  /* Text color */
-                font-family: 'Arial', sans-serif;  /* Arial font */
-                font-size: 16px;
-            }
-            QLineEdit {
-                background-color: #F865B0;  /* Background color for input fields */
-                border: 2px solid #E637BF;  /* Border color */
-                border-radius: 10px;
-                padding: 10px;
-                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-            }
-            QLineEdit:focus {
-                border: 2px solid #48304D;  /* Border color on focus */
-            }
-            QPushButton {
-                background-color: #E637BF;  /* Button background color */
-                border: none;
-                border-radius: 10px;
-                padding: 10px;
-                margin-top: 10px;
-                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-                color: white;  /* Button text color */
-            }
-            QPushButton:hover {
-                background-color: #F865B0;  /* Button color on hover */
-                box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.4);
-            }
-            QFrame {
-                background-color: #FBCAEF;  /* Background color for frames */
-                border-radius: 15px;
-                padding: 20px;
-                margin-top: 20px;
-                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-            }
-            QTableWidget {
-                background-color: #FFFFFF;  /* Table background color */
-                border: 2px solid #E637BF;
-                border-radius: 10px;
-            }
-            QHeaderView::section {
-                background-color: #E637BF;
-                color: white;
-                padding: 5px;
-                border: none;
-            }
+        QMainWindow {
+            background-color: #f0f0f0;
+        }
+        QLabel {
+            font-family: Baloo 2;
+            font-size: 18px;
+        }
+        QLineEdit {
+            padding: 5px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        QPushButton {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        QPushButton:hover {
+            background-color: #005f75;
+        }
+        QTableWidget {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        QHeaderView::section {
+            background-color: #f0f0f0;
+            padding: 5px;
+            border: none;
+            font-size: 14px;
+            font-family: Baloo 2;
+        }
         """
 
-def main():
+if __name__ == '__main__':
     app = QApplication(sys.argv)
-    settings = {}  # You need to pass your settings here
-    login_window = QMainWindow()  # Replace with your actual login window
-    window = AfterLoginWindow(settings, login_window)
+    login_window = QMainWindow()  # Placeholder for actual login window
+    window = AfterLoginWindow(None, login_window)
     window.show()
-    sys.exit(app.exec())
-
-if __name__ == "__main__":
-    main()
+    sys.exit(app.exec_())

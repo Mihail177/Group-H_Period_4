@@ -9,10 +9,6 @@ from PyQt5.QtCore import Qt
 from sqlalchemy import create_engine, Table, MetaData, func
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from picamera2 import Picamera2, Preview
-from time import sleep
-import pigpio
-import os
 
 # Paths to the model files
 predictor_path = 'shape_predictor_68_face_landmarks.dat'
@@ -156,16 +152,12 @@ class MainWindow(QWidget):
             known_names.append(full_name)
             known_employee_ids.append(employee.employee_id)
 
-        # Initialize Picamera2
-        picam2 = Picamera2()
-        picam2.configure(picam2.create_still_configuration())
-        picam2.start()
-        
-        # Capture image
-        frame = picam2.capture_array()
-        picam2.stop()
+        # Open a connection to the webcam
+        cap = cv2.VideoCapture(0)
+        ret, frame = cap.read()
+        cap.release()
 
-        if frame is None:
+        if not ret:
             self.recognition_label.setText("Failed to capture image.")
             return
 
@@ -213,34 +205,6 @@ class MainWindow(QWidget):
                 )
                 session.execute(log_entry)
                 session.commit()
-                
-                # Open the door
-                self.open_door()
-
-    def open_door(self):
-        os.system("sudo pigpiod")
-        sleep(1)
-
-        pi = pigpio.pi()
-        if not pi.connected:
-            self.recognition_label.setText("Failed to connect to the servo motor.")
-            return
-        
-        SERVO_PIN = 18
-        def set_servo_pulsewidth(pulsewidth):
-            pi.set_servo_pulsewidth(SERVO_PIN, pulsewidth)
-
-        try:
-            # Open the door (set servo to open position)
-            set_servo_pulsewidth(2500)
-            sleep(60)  # Wait for 1 minute
-            # Close the door (set servo to close position)
-            set_servo_pulsewidth(500)
-            sleep(2)
-        finally:
-            pi.set_servo_pulsewidth(SERVO_PIN, 0)
-            pi.stop()
-            os.system("sudo killall pigpiod")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
