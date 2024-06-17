@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QFileDialog, \
     QMessageBox, QLineEdit, QHBoxLayout, QFormLayout, QFrame, QSpacerItem, QSizePolicy, QTableWidget, \
     QTableWidgetItem, QHeaderView, QListWidget
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QPoint, QRect
 from PyQt6.QtGui import QPixmap, QPainter, QLinearGradient, QColor, QBrush, QFont, QFontDatabase
 import sys
 import face_recognition
@@ -13,6 +13,9 @@ class AddEmployeeWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Add New Employee")
         self.setGeometry(100, 100, 800, 600)
+
+        self.gradient_widget = QWidget(self)
+        self.setCentralWidget(self.gradient_widget)
 
         # Set up layout and other widgets
         layout = QVBoxLayout(self.gradient_widget)
@@ -43,28 +46,44 @@ class AddEmployeeWindow(QMainWindow):
         # Reflect the employee table
         self.employee_table = Table('EMPLOYEE', self.metadata, autoload_with=self.engine)
 
+
     def setup_ui(self):
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+
         # Create widgets
-        frame = QFrame()
+        frame = QFrame(central_widget)
         frame_layout = QVBoxLayout(frame)
+
+        frame_layout.setContentsMargins(0, 0, 50, 200)  # Adjust as per your preference
 
         self.label_image = QLabel()
         self.label_image.setFixedSize(300, 300)
         self.label_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        self.setStyleSheet(
+            """
+            QMainWindow {
+                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                                            stop: 0 #FCE3FD, stop: 1 #9C87E1);
+            }
+            """
+        )
         choose_file_button = QPushButton("Choose File")
         choose_file_button.clicked.connect(self.choose_file)
 
-        self.input_id = QLineEdit()
-        self.input_first_name = QLineEdit()
-        self.input_last_name = QLineEdit()
-        self.input_nfc_data = QLineEdit()
+        self.input_id = QLineEdit(central_widget)
+        self.input_first_name = QLineEdit(central_widget)
+        self.input_last_name = QLineEdit(central_widget)
+        self.input_nfc_data = QLineEdit(central_widget)
 
         form_layout = QFormLayout()
+        form_layout.setContentsMargins(20, 20, 20, 20)  # Increase padding inside form layout
         form_layout.addRow("Employee ID:", self.input_id)
         form_layout.addRow("First Name:", self.input_first_name)
         form_layout.addRow("Last Name:", self.input_last_name)
         form_layout.addRow("NFC Data:", self.input_nfc_data)
+
 
         submit_button = QPushButton("Submit")
         submit_button.clicked.connect(self.submit_data)
@@ -75,12 +94,9 @@ class AddEmployeeWindow(QMainWindow):
         frame_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
         frame_layout.addWidget(submit_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-
         main_layout = QHBoxLayout(central_widget)
         main_layout.addStretch()
-        main_layout.addWidget(frame)
+        main_layout.addWidget(frame, alignment=Qt.AlignmentFlag.AlignCenter)
         main_layout.addStretch()
 
     def choose_file(self):
@@ -168,10 +184,13 @@ class EmployeeManagementWindow(QMainWindow):
         self.admin_table = Table('ADMIN', self.metadata, autoload_with=self.engine)
         self.log_table = Table('LOG', self.metadata, autoload_with=self.engine)
         self.room_table = Table('ROOM', self.metadata, autoload_with=self.engine)
-        self.table.setStyleSheet("background-color: #9C87E1; font-family: Baloo 2; ")
+        self.table.setStyleSheet("background-color: #9C87E1; font-family: Baloo 2; border-radius: 7px; font-size: 14px ")
 
         # Load data for initial menu item
         self.load_selected_table(self.menu.item(0), None)
+
+        # Maintain a reference to the AddEmployeeWindow
+        self.add_employee_window = None
 
     def setup_ui(self):
         central_widget = QWidget()
@@ -183,10 +202,12 @@ class EmployeeManagementWindow(QMainWindow):
         self.menu = QListWidget()
         self.menu.addItems(["Employee", "Admin", "Log", "Room"])
         self.menu.currentItemChanged.connect(self.load_selected_table)
+        self.menu.setStyleSheet("background-color: #9C87E1;font-family: Baloo 2; font-size: 14px;border-radius: 7px; padding: 5px")
 
         # Table to display data
         self.table = QTableWidget()
-        self.table.setStyleSheet("background-color: #9C87E1;font-family: Baloo 2;")
+        self.table.setStyleSheet("background-color: #9C87E1;font-family: Baloo 2; border-radius: 7px")
+        self.table.setWordWrap(True)
 
         # Add and Remove buttons
         self.button_layout = QVBoxLayout()
@@ -202,6 +223,8 @@ class EmployeeManagementWindow(QMainWindow):
         main_layout.addWidget(self.table)
 
         self.button_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.add_button.setStyleSheet("background-color: #9C87E1;font-family: Baloo 2; font-size: 14px; border-radius: 2px;")
+        self.remove_button.setStyleSheet("background-color: #9C87E1;font-family: Baloo 2; font-size: 14px;border-radius: 2px; padding: 3px")
 
     def load_selected_table(self, current, previous):
         table_name = current.text().lower()
