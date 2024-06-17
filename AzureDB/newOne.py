@@ -10,6 +10,9 @@ from sqlalchemy import create_engine, Table, MetaData, func
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from picamera2 import Picamera2, Preview
+from time import sleep
+import pigpio
+import os
 
 # Import pigpio for servo control
 import pigpio
@@ -214,6 +217,34 @@ class MainWindow(QWidget):
                 )
                 session.execute(log_entry)
                 session.commit()
+                
+                # Open the door
+                self.open_door()
+
+    def open_door(self):
+        os.system("sudo pigpiod")
+        sleep(1)
+
+        pi = pigpio.pi()
+        if not pi.connected:
+            self.recognition_label.setText("Failed to connect to the servo motor.")
+            return
+        
+        SERVO_PIN = 18
+        def set_servo_pulsewidth(pulsewidth):
+            pi.set_servo_pulsewidth(SERVO_PIN, pulsewidth)
+
+        try:
+            # Open the door (set servo to open position)
+            set_servo_pulsewidth(2500)
+            sleep(60)  # Wait for 1 minute
+            # Close the door (set servo to close position)
+            set_servo_pulsewidth(500)
+            sleep(2)
+        finally:
+            pi.set_servo_pulsewidth(SERVO_PIN, 0)
+            pi.stop()
+            os.system("sudo killall pigpiod")
 
             # Open the door
             set_servo_pulsewidth(2500)  # Adjust this value if needed
