@@ -224,11 +224,11 @@ class MainWindow(QWidget):
     def run_nfc_recognition(self):
         def on_connect(tag):
             # Extract ID from NFC tag
-            tag_id = str(tag).split()[2]
+            tag_id = str(tag).split("=")[1].strip()
             self.recognition_label.setText(f"Tag ID: {tag_id}")
 
             # Query the database for the tag ID
-            employee = session.query(employee_table).filter_by(nfc_id=tag_id).first()
+            employee = session.query(employee_table).filter_by(NFC_data=tag_id).first()
             if employee:
                 room = session.query(room_table).filter_by(ip_address=self.ip_address).first()
                 if room:
