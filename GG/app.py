@@ -5,14 +5,13 @@ import dlib
 from time import sleep
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout, QLineEdit
-from PyQt5.QtGui import QPalette, QBrush, QLinearGradient, QColor, QTransform
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QPalette, QBrush, QLinearGradient, QColor
+from PyQt5.QtCore import Qt
 from sqlalchemy import create_engine, Table, MetaData, func
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from picamera2 import Picamera2, Preview
 import subprocess
-import os
 
 # Paths to the model files
 predictor_path = 'shape_predictor_68_face_landmarks.dat'
@@ -62,11 +61,9 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Room Registration")
-        self.showFullScreen()
+        self.setGeometry(100, 100, 800, 480)
 
-        self.setFixedSize(480, 800)
-        self.setGeometry(0, 0, 480, 800)
-
+        # Create a gradient background
         palette = QPalette()
         gradient = QLinearGradient(0, 0, 0, 1)
         gradient.setCoordinateMode(QLinearGradient.StretchToDeviceMode)
@@ -85,12 +82,12 @@ class MainWindow(QWidget):
         if not room_exists:
             self.room_input = QLineEdit(self)
             self.room_input.setPlaceholderText("Enter Room Number")
-            self.room_input.setFixedSize(250, 150)
+            self.room_input.setFixedSize(200, 50)
             self.room_input.setStyleSheet("background-color: white; font-size: 18px; color: black;")
             self.layout.addWidget(self.room_input)
 
             self.submit_button = QPushButton("Submit", self)
-            self.submit_button.setFixedSize(250, 150)
+            self.submit_button.setFixedSize(200, 50)
             self.submit_button.setStyleSheet("background-color: #4CAF50; color: white; font-size: 18px;")
             self.submit_button.clicked.connect(self.register_room)
             self.layout.addWidget(self.submit_button)
@@ -126,15 +123,15 @@ class MainWindow(QWidget):
                 widget.setParent(None)
 
         self.facial_button = QPushButton("Facial Recognition", self)
-        self.facial_button.setFixedSize(250, 150)
+        self.facial_button.setFixedSize(200, 50)
         self.facial_button.setStyleSheet("background-color: #4CAF50; color: white; font-size: 18px;")
         self.facial_button.clicked.connect(self.run_facial_recognition)
         self.layout.addWidget(self.facial_button)
 
         self.nfc_button = QPushButton("NFC", self)
-        self.nfc_button.setFixedSize(250, 150)
+        self.nfc_button.setFixedSize(200, 50)
         self.nfc_button.setStyleSheet("background-color: #008CBA; color: white; font-size: 18px;")
-        # Connect NFC functionality here
+        self.facial_button.clicked.connect(self.on_connect)
         self.layout.addWidget(self.nfc_button)
 
         self.recognition_label = QLabel(self)
@@ -169,7 +166,6 @@ class MainWindow(QWidget):
 
         if frame is None:
             self.recognition_label.setText("Failed to capture image.")
-            self.restart_rec()
             return
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -177,7 +173,6 @@ class MainWindow(QWidget):
 
         if len(faces) == 0:
             self.recognition_label.setText("No face detected.")
-            self.restart_rec()
             return
 
         face = faces[0]  # Process the first detected face
@@ -217,20 +212,37 @@ class MainWindow(QWidget):
                 )
                 session.execute(log_entry)
                 session.commit()
+
+
                 subprocess.run(["python3", "lock.py"])
-                self.restart_rec()
-           
+
+    def on_connect(tag, self):
+        nfc_id = str(tag)
+        print(f"NFC tag connected: {nfc_id}")
+
+        # Query the EMPLOYEE table to find a matching NFC_data
+        employee = session.query(employee_table).filter_by(NFC_data=nfc_id).first()
+
+        if employee:
+            print(f"Employee found: {employee.employee_id}")
+            room = session.query(room_table).filter_by(ip_address=self.ip_address).first()
+            if room:
+                log_entry = log_table.insert().values(
+                    employee_id=employee,
+                    room_number=room.room_number,
+                    date_and_time=datetime.now()  # Provide an explicit value for the date_and_time column
+                )
+                session.execute(log_entry)
+                session.commit()
+                subprocess.run(["python3", "lock.py"])
+        else:
+            print("No matching employee found.")
+
+        return False
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.close()
-
-    def restart_rec(self):
-        QTimer.singleShot(3000, self.relaunch_script)    
-
-    def relaunch_script(self):
-        python = sys.executable
-        os.execv(python, [python] + sys.argv)       
 
 
 if __name__ == '__main__':
