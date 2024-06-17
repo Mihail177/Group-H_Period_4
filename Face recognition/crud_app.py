@@ -2,33 +2,17 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBo
     QMessageBox, QLineEdit, QHBoxLayout, QFormLayout, QFrame, QSpacerItem, QSizePolicy, QTableWidget, \
     QTableWidgetItem, QHeaderView, QListWidget
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap,QPainter, QLinearGradient, QColor, QBrush
+from PyQt6.QtGui import QPixmap, QPainter, QLinearGradient, QColor, QBrush, QFont, QFontDatabase
 import sys
 import face_recognition
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
-
-class GradientWidget(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setAutoFillBackground(True)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        gradient = QLinearGradient(0, 0, self.width(), self.height())
-        gradient.setColorAt(0, QColor("#9C87E1"))
-        gradient.setColorAt(1, QColor("#FCE3FD"))
-        painter.fillRect(self.rect(), gradient)
 
 class AddEmployeeWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Add New Employee")
         self.setGeometry(100, 100, 800, 600)
-
-        # Create the gradient background widget
-        self.gradient_widget = GradientWidget(self)
-        self.setCentralWidget(self.gradient_widget)
 
         # Set up layout and other widgets
         layout = QVBoxLayout(self.gradient_widget)
@@ -160,7 +144,7 @@ class EmployeeManagementWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Employee Management")
         self.setGeometry(100, 100, 1200, 600)
-        self.setStyleSheet("background-color: #FCE3FD;")
+        self.setStyleSheet("background-color: #FCE3FD; font-family: Baloo 2 ")
 
         self.setup_ui()
 
@@ -184,6 +168,7 @@ class EmployeeManagementWindow(QMainWindow):
         self.admin_table = Table('ADMIN', self.metadata, autoload_with=self.engine)
         self.log_table = Table('LOG', self.metadata, autoload_with=self.engine)
         self.room_table = Table('ROOM', self.metadata, autoload_with=self.engine)
+        self.table.setStyleSheet("background-color: #9C87E1; font-family: Baloo 2; ")
 
         # Load data for initial menu item
         self.load_selected_table(self.menu.item(0), None)
@@ -201,6 +186,7 @@ class EmployeeManagementWindow(QMainWindow):
 
         # Table to display data
         self.table = QTableWidget()
+        self.table.setStyleSheet("background-color: #9C87E1;font-family: Baloo 2;")
 
         # Add and Remove buttons
         self.button_layout = QVBoxLayout()
@@ -337,6 +323,19 @@ def main():
     app = QApplication(sys.argv)
     window = EmployeeManagementWindow()
     window.show()
+
+    # Load Baloo font
+    try:
+        font_id = QFontDatabase.addApplicationFont("Baloo2-Bold.ttf")
+        if font_id == -1:
+            print("Failed to load font")
+        else:
+            baloo_font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+            print(f"Loaded font family: {baloo_font_family}")
+            app.setFont(QFont(baloo_font_family))
+    except Exception as e:
+        print(f"Error loading font: {e}")
+
     sys.exit(app.exec())
 
 
