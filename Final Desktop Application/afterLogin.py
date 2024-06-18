@@ -1,11 +1,10 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QMessageBox, \
-    QHBoxLayout, QFrame, QSpacerItem, QSizePolicy, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QLineEdit, \
+    QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QLineEdit, \
     QFormLayout, QListWidget, QInputDialog
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 import face_recognition
-from PyQt6.QtGui import QFontDatabase, QFont
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
 
@@ -285,25 +284,26 @@ class AfterLoginWindow(QMainWindow):
         self.add_employee_form.show()
 
     def remove_employee(self):
-        employee_id, ok = QInputDialog.getText(self, "Remove Employee", "Enter Employee ID:")
-        if ok and employee_id:
-            Session = sessionmaker(bind=self.engine)
-            session = Session()
-            try:
-                # Find the employee record
-                employee = session.query(self.employee_table).filter_by(employee_id=employee_id).first()
-                if employee:
-                    session.delete(employee)
-                    session.commit()
-                    QMessageBox.information(self, "Success", f"Employee with ID {employee_id} removed successfully.")
-                    self.load_employee_data()  # Reload the data to reflect the changes
-                else:
-                    QMessageBox.warning(self, "Error", f"No employee found with ID {employee_id}.")
-            except Exception as e:
-                session.rollback()
-                QMessageBox.warning(self, "Error", f"An error occurred while removing employee: {e}")
-            finally:
-                session.close()
+        selected_items = self.table.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "No Selection", "Please select an employee to remove.")
+            return
+
+        selected_row = selected_items[0].row()
+        employee_id = self.table.item(selected_row, 0).text()
+
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            session.query(self.employee_table).filter_by(employee_id=employee_id).delete()
+            session.commit()
+            self.table.removeRow(selected_row)
+            QMessageBox.information(self, "Employee Removed", "Employee removed successfully!")
+        except Exception as e:
+            session.rollback()
+            QMessageBox.warning(self, "Database Error", f"An error occurred: {e}")
+        finally:
+            session.close()
 
     def get_stylesheet(self):
         return """
@@ -365,44 +365,7 @@ class AfterLoginWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
-    # # Load Berkshire font
-    # try:
-    #     font_id = QFontDatabase.addApplicationFont("BerkshireSwash-Regular.ttf")
-    #     if font_id == -1:
-    #         print("Failed to load font")
-    #     else:
-    #         berkshire_font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-    #         print(f"Loaded font family: {berkshire_font_family}")
-    #         app.setFont(QFont(berkshire_font_family))
-    # except Exception as e:
-    #     print(f"Error loading font: {e}")
-    #
-    # # Load Baloo font
-    # try:
-    #     font_id = QFontDatabase.addApplicationFont("Baloo2-VariableFont_wght.ttf")
-    #     if font_id == -1:
-    #         print("Failed to load font")
-    #     else:
-    #         baloo_font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-    #         print(f"Loaded font family: {baloo_font_family}")
-    #         app.setFont(QFont(baloo_font_family))
-    # except Exception as e:
-    #     print(f"Error loading font: {e}")
-    #
-    # # Load Quicksand font
-    # try:
-    #     font_id_quicksand = QFontDatabase.addApplicationFont("Quicksand-VariableFont_wght.ttf")
-    #     if font_id_quicksand == -1:
-    #         print("Failed to load font")
-    #     else:
-    #         quicksand_font_family = QFontDatabase.applicationFontFamilies(font_id_quicksand)[0]
-    #         print(f"Loaded font family: {quicksand_font_family}")
-    #         app.setFont(QFont(quicksand_font_family))
-    # except Exception as e:
-    #     print(f"Error loading font: {e}")
-
-    login_window = QMainWindow()  # Placeholder for actual login window
+    login_window = QMainWindow()
     window = AfterLoginWindow(None, login_window)
     window.show()
     sys.exit(app.exec_())
