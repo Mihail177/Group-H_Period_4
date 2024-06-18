@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QMessageBox, \
     QHBoxLayout, QFrame, QSpacerItem, QSizePolicy, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QLineEdit, \
-    QFormLayout
+    QFormLayout, QInputDialog
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 import face_recognition
