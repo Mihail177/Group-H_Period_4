@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QMessageBox, \
     QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QLineEdit, \
-    QFormLayout, QListWidget, QInputDialog
+    QFormLayout, QListWidget
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 import face_recognition
@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
 
 
-class AfterLoginWindow(QMainWindow):
+class EmployeeManagementWindow(QMainWindow):
     def __init__(self, settings, login_window):
         super().__init__()
         self.label_image = None
@@ -34,7 +34,6 @@ class AfterLoginWindow(QMainWindow):
 
         # Reflect the tables
         self.employee_table = Table('EMPLOYEE', self.metadata, autoload_with=self.engine)
-        self.admin_table = Table('ADMIN', self.metadata, autoload_with=self.engine)
         self.log_table = Table('LOG', self.metadata, autoload_with=self.engine)
         self.room_table = Table('ROOM', self.metadata, autoload_with=self.engine)
 
@@ -62,11 +61,12 @@ class AfterLoginWindow(QMainWindow):
         # Add a logout button
         logout_button = QPushButton("Logout")
         logout_button.setStyleSheet(
-            "background-color: #FF6347; color: white; border-radius: 15px; font-family: Baloo 2; font-weight: bold; height: 60px")
+            "background-color: #7976E8; color: white; border-radius: 15px; font-family: Berkshire Swash; font-weight: bold; height: 60px")
         logout_button.clicked.connect(self.logout)
 
         # Add and Remove buttons
         self.add_button = QPushButton("Add Employee")
+        self.add_button.setStyleSheet("background-color: #7976E8; color: white; border-radius: 15px; font-family: Berkshire Swash; font-weight: bold; height: 60px")
         self.add_button.clicked.connect(self.open_add_employee_form)
         self.remove_button = QPushButton("Remove Employee")
         self.remove_button.clicked.connect(self.remove_employee)
@@ -432,6 +432,6 @@ class AfterLoginWindow(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     login_window = QMainWindow()
-    window = AfterLoginWindow(None, login_window)
+    window = EmployeeManagementWindow(None, login_window)
     window.show()
     sys.exit(app.exec_())
