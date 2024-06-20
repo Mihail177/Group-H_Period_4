@@ -173,7 +173,7 @@ class LoginWindow(GradientWidget):
 
                     QMessageBox.information(self, "Login", f"Login Successful. Welcome!")
                     self.close()
-                    from afterLogin import AfterLoginWindow
+                    from app import AfterLoginWindow
                     self.after_login_window = AfterLoginWindow(self.settings, self)
                     self.after_login_window.show()
                 else:
