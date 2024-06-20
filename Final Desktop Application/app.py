@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QMessageBox, \
     QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QLineEdit, \
-    QFormLayout, QListWidget, QInputDialog
+    QFormLayout, QListWidget
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 import face_recognition
@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
 
 
-class AfterLoginWindow(QMainWindow):
+class EmployeeManagementWindow(QMainWindow):
     def __init__(self, settings, login_window):
         super().__init__()
         self.label_image = None
@@ -34,7 +34,6 @@ class AfterLoginWindow(QMainWindow):
 
         # Reflect the tables
         self.employee_table = Table('EMPLOYEE', self.metadata, autoload_with=self.engine)
-        self.admin_table = Table('ADMIN', self.metadata, autoload_with=self.engine)
         self.log_table = Table('LOG', self.metadata, autoload_with=self.engine)
         self.room_table = Table('ROOM', self.metadata, autoload_with=self.engine)
 
@@ -61,8 +60,7 @@ class AfterLoginWindow(QMainWindow):
 
         # Add a logout button
         logout_button = QPushButton("Logout")
-        logout_button.setStyleSheet(
-            "background-color: #FF6347; color: white; border-radius: 15px; font-family: Baloo 2; font-weight: bold; height: 60px")
+        logout_button.setStyleSheet("background-color: red; color: white; border-radius: 15px; font-family: Berkshire Swash; font-weight: bold; height: 60px")
         logout_button.clicked.connect(self.logout)
 
         # Add and Remove buttons
@@ -253,46 +251,46 @@ class AfterLoginWindow(QMainWindow):
         self.add_employee_form.setGeometry(100, 100, 400, 300)
 
         self.add_employee_form.setStyleSheet("""
-               QWidget {
-                   background: qlineargradient(
-                       spread:pad, x1:0, y1:0, x2:1, y2:1, 
-                       stop:0 #9C87E1, stop:1 #FCE3FD);
-                   font-family: 'Baloo 2';
-                   color: white;
-               }
-               QLineEdit, QComboBox {
-                   background-color: white;
-                   padding: 10px;
-                   border: 1px solid #DDDDDD;
-                   border-radius: 15px;
-                   font-family: 'Baloo 2';
-                   font-size: 16px;
-                   color: white;
-               }
-               QLabel {
-                   background: transparent;
-                   font-family: 'Baloo 2';
-                   font-size: 16px;
-                   font-weight: bold;
-                   color: white;
-               }
-               QPushButton {
-                   background-color: #9C87E1;
-                   color: white;
-                   border: none;
-                   padding: 10px 20px;
-                   border-radius: 15px;
-                   font-family: 'Baloo 2';
-                   font-size: 18px;
-                   font-weight: bold;
-                   height: 60px;
-               }
-               QPushButton:hover {
-                   background: qlineargradient(
-                       spread:pad, x1:0, y1:0, x2:1, y2:1, 
-                       stop:0 #9C87E1, stop:1 #FCE3FD);        
-               }
-               """)
+                   QWidget {
+                       background: qlineargradient(
+                           spread:pad, x1:0, y1:0, x2:1, y2:1, 
+                           stop:0 #9C87E1, stop:1 #FCE3FD);
+                       font-family: 'Baloo 2';
+                       color: white;
+                   }
+                   QLineEdit, QComboBox {
+                       background-color: white;
+                       padding: 10px;
+                       border: 1px solid #DDDDDD;
+                       border-radius: 15px;
+                       font-family: 'Baloo 2';
+                       font-size: 16px;
+                       color: white;
+                   }
+                   QLabel {
+                       background: transparent;
+                       font-family: 'Baloo 2';
+                       font-size: 16px;
+                       font-weight: bold;
+                       color: white;
+                   }
+                   QPushButton {
+                       background-color: #9C87E1;
+                       color: white;
+                       border: none;
+                       padding: 10px 20px;
+                       border-radius: 15px;
+                       font-family: 'Baloo 2';
+                       font-size: 18px;
+                       font-weight: bold;
+                       height: 60px;
+                   }
+                   QPushButton:hover {
+                       background: qlineargradient(
+                           spread:pad, x1:0, y1:0, x2:1, y2:1, 
+                           stop:0 #9C87E1, stop:1 #FCE3FD);        
+                   }
+                   """)
 
         layout = QVBoxLayout()
 
@@ -310,7 +308,6 @@ class AfterLoginWindow(QMainWindow):
         self.label_image = QLabel()
         self.label_image.setFixedSize(200, 200)
         self.label_image.setAlignment(Qt.AlignCenter)
-        self.label_image.setStyleSheet("background: transparent; border: none;")  # Make the label blend into the form
         form_layout.addRow("Image:", self.label_image)
 
         choose_file_button = QPushButton("Choose File")
@@ -426,9 +423,10 @@ class AfterLoginWindow(QMainWindow):
         }
         """
 
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     login_window = QMainWindow()
-    window = AfterLoginWindow(None, login_window)
+    window = EmployeeManagementWindow(None, login_window)
     window.show()
     sys.exit(app.exec_())
