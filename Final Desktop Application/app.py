@@ -256,7 +256,7 @@ class EmployeeManagementWindow(QMainWindow):
                            spread:pad, x1:0, y1:0, x2:1, y2:1, 
                            stop:0 #9C87E1, stop:1 #FCE3FD);
                        font-family: 'Baloo 2';
-                       color: white;
+                       color: black;
                    }
                    QLineEdit, QComboBox {
                        background-color: white;
@@ -265,7 +265,7 @@ class EmployeeManagementWindow(QMainWindow):
                        border-radius: 15px;
                        font-family: 'Baloo 2';
                        font-size: 16px;
-                       color: white;
+                       color: black;
                    }
                    QLabel {
                        background: transparent;
