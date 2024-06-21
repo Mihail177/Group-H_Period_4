@@ -6,6 +6,7 @@ import pymssql
 import bcrypt
 from passwordHash import RegistrationWindow
 
+# A95A8D70
 # Custom widget for gradient background
 class GradientWidget(QWidget):
     def __init__(self):
